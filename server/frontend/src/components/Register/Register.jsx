@@ -45,8 +45,8 @@ const Register = () => {
         sessionStorage.setItem('username', json.userName);
         window.location.href = window.location.origin;
     }
-    else if (json.error === "Already Registered") {
-      alert("The user with same username is already registered");
+    else if (json.error) {
+      alert(json.error);
       window.location.href = window.location.origin;
     }
 };

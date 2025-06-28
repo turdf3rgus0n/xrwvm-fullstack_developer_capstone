@@ -54,32 +54,41 @@ def registration(request):
     first_name = data['firstName']
     last_name = data['lastName']
     email = data['email']
-    username_exist = False
 
     try:
         # Check if user already exists
         User.objects.get(username=username)
-        username_exist = True
+        data = {"userName": username,
+                "error": "A user with the same username is already registered"}
+        return JsonResponse(data)
+
     except Exception:
         # If not, simply log this is a new user
         logger.debug("{} is new user".format(username))
 
-    # If it is a new user
-    if not username_exist:
-        # Create user in auth_user table
-        user = User.objects.create_user(username=username,
-                                        first_name=first_name,
-                                        last_name=last_name,
-                                        password=password,
-                                        email=email)
+    try:
+        # Check if email already exists
+        User.objects.get(email=email)
+        data = {"email": email,
+                "error": "A user with the same email ia already registered"}
+        return JsonResponse(data)
 
-        # Login the user and redirect to list page
-        login(request, user)
-        data = {"userName": username, "status": "Authenticated"}
-        return JsonResponse(data)
-    else:
-        data = {"userName": username, "error": "Already Registered"}
-        return JsonResponse(data)
+    except Exception:
+        # If not, simply log this is a new user
+        logger.debug("{} is new user email address".format(email))
+
+    # If it is a new user
+    # Create user in auth_user table
+    user = User.objects.create_user(username=username,
+                                    first_name=first_name,
+                                    last_name=last_name,
+                                    password=password,
+                                    email=email)
+
+    # Login the user and redirect to list page
+    login(request, user)
+    data = {"userName": username, "status": "Authenticated"}
+    return JsonResponse(data)
 
 
 def get_cars(request):
@@ -135,12 +144,13 @@ def get_dealer_details(request, dealer_id):
 
 # Create a `add_review` view to submit a review
 def add_review(request):
-    if(request.user.is_anonymous == False):
+    if (not request.user.is_anonymous):
         data = json.loads(request.body)
         try:
-            response = post_review(data)
-            return JsonResponse({"status":200})
-        except:
-            return JsonResponse({"status":401,"message":"Error in posting review"})
+            response = post_review(data)  # noqa: F841
+            return JsonResponse({"status": 200})
+        except Exception:
+            return JsonResponse({"status": 401,
+                                 "message": "Error in posting review"})
     else:
-        return JsonResponse({"status":403,"message":"Unauthorized"})
+        return JsonResponse({"status": 403, "message": "Unauthorized"})
